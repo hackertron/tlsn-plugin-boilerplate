@@ -100,40 +100,70 @@ export function two() {
  * In this example it locates the `screen_name` and excludes that range from the revealed response.
  */
 export function parseAxisResp() {
-  console.log("parseAxisResp HOST : inputBytes,inputString, ",
-    Host.inputBytes(),
-    Host.inputString(),
-  );
+  console.log("parseAxisResp: Starting function");
   const bodyString = Host.inputString();
   let params;
+
   try {
     params = JSON.parse(bodyString);
+    console.log("Successfully parsed JSON");
   } catch (e) {
     console.error("Error parsing JSON:", e);
     outputJSON(false);
     return;
   }
-  console.log("params parseAxisRsp");
-  console.log(JSON.stringify(params));
 
-  if (params.status === 400) {
-    console.error("Received error response:", params.message);
+  console.log("Parsed params:", JSON.stringify(params, null, 2));
+
+  if (params.status !== 200) {
+    console.error("Received non-200 status:", params.status);
     outputJSON(false);
     return;
   }
 
-  if (params.id && params.id.tntId) {
-    const revealed = `"tntId":"${params.id.tntId}"`;
-    const selectionStart = bodyString.indexOf(revealed);
-    const selectionEnd = selectionStart + revealed.length;
-    const secretResps = [
-      bodyString.substring(0, selectionStart),
-      bodyString.substring(selectionEnd, bodyString.length),
-    ];
-    outputJSON(secretResps);
-  } else {
-    outputJSON(false);
-  }
+  console.log("Status 200 received, proceeding to extract essential information");
+
+  // Function to find the CUST_NAME key
+  const findCustomerNameKey = (obj: any): string | null => {
+    for (const key in obj) {
+      if (key.startsWith('crs.') && key.endsWith('.CUST_NAME')) {
+        return key;
+      }
+    }
+    return null;
+  };
+
+  const responseTokens = params.execute.pageLoad.options[0].responseTokens;
+  const customerNameKey = findCustomerNameKey(responseTokens);
+
+  // Extract and reveal only essential information
+  const revealedInfo = {
+    status: params.status,
+    requestId: params.requestId,
+    client: params.client,
+    tntId: params.id.tntId,
+    edgeHost: params.edgeHost,
+    customerName: customerNameKey ? responseTokens[customerNameKey] : 'Not Found',
+    responseTokens: {
+      activityName: responseTokens["activity.name"],
+      activityId: responseTokens["activity.id"],
+      geoCountry: responseTokens["geo.country"],
+    }
+  };
+
+  console.log("Extracted revealed info:", JSON.stringify(revealedInfo, null, 2));
+
+  // Create a JSON string with the revealed information
+  const revealedString = JSON.stringify(revealedInfo);
+  console.log("Revealed string:", revealedString);
+
+  // Create the secretResps array with the revealed information as a JSON string
+  const secretResps = [revealedString];
+  console.log("secretResps: ", secretResps);
+
+  console.log("parseAxisResp: Finished processing");
+
+  outputJSON(secretResps);
 }
 
 /**
@@ -151,6 +181,7 @@ export function three() {
       ...params,
       getSecretResponse: 'parseAxisResp',
     });
+    console.log("three fx id : ", id);
     outputJSON(id);
   }
 }
