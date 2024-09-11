@@ -67,7 +67,7 @@ export function two() {
   outputJSON({
     url: `https://axisbank.tt.omtrdc.net/rest/v1/delivery?client=axisbank&sessionId=${session_id}&version=2.9.0`,
     method: 'POST',
-    body: JSON.stringify({
+    body: {
       "requestId": "tlsnotary-request",
       "context": {
         "timeOffsetInMinutes": 540,
@@ -78,8 +78,8 @@ export function two() {
         }
       },
       "property": { "token": "9ce88a12-5059-0b74-f70e-c211d1f59ba3" },
-      "execute": { "pageLoad": { "parameters": { "viewName": "omni_postlogin_accounts_LAST 10 TRANSACTIONS" } } }
-    }),
+      "execute": { "pageLoad": { "parameters": { "viewName": "omni_postlogin_dashboard_undefined" } } }
+    },
     headers: {
       "Accept-Language": "en-GB,en;q=0.5",
       "Origin": "https://omni.axisbank.co.in",
