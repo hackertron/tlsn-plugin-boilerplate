@@ -113,18 +113,17 @@ export function parseAxisResp() {
     return;
   }
 
-  console.log("Parsed params:", JSON.stringify(params, null, 2));
-
   if (params.status !== 200) {
     console.error("Received non-200 status:", params.status);
     outputJSON(false);
     return;
   }
 
-  console.log("Status 200 received, proceeding to extract essential information");
+  console.log("Status 200 received, proceeding to redact sensitive information");
 
   // Function to find the CUST_NAME key
   const findCustomerNameKey = (obj: any): string | null => {
+    if (typeof obj !== 'object' || obj === null) return null;
     for (const key in obj) {
       if (key.startsWith('crs.') && key.endsWith('.CUST_NAME')) {
         return key;
@@ -133,33 +132,24 @@ export function parseAxisResp() {
     return null;
   };
 
-  const responseTokens = params.execute.pageLoad.options[0].responseTokens;
+  const responseTokens = params.execute?.pageLoad?.options?.[0]?.responseTokens || {};
   const customerNameKey = findCustomerNameKey(responseTokens);
+  const customerName = customerNameKey ? responseTokens[customerNameKey] : 'Not Found';
 
-  // Extract and reveal only essential information
-  const revealedInfo = {
-    status: params.status,
-    requestId: params.requestId,
-    client: params.client,
-    tntId: params.id.tntId,
-    edgeHost: params.edgeHost,
-    customerName: customerNameKey ? responseTokens[customerNameKey] : 'Not Found',
-    responseTokens: {
-      activityName: responseTokens["activity.name"],
-      activityId: responseTokens["activity.id"],
-      geoCountry: responseTokens["geo.country"],
-    }
-  };
+  // Create an array of strings to redact
+  const redactStrings = [
+    `"${customerNameKey}":"${customerName}"`,
+    `"tntId":"${params.id?.tntId || ''}"`,
+    // Add more strings to redact as needed
+  ];
 
-  console.log("Extracted revealed info:", JSON.stringify(revealedInfo, null, 2));
+  // Filter out any undefined or empty strings
+  const validRedactStrings = redactStrings.filter(s => s && s.includes(':'));
 
-  // Create a JSON string with the revealed information
-  const revealedString = JSON.stringify(revealedInfo);
-  console.log("Revealed string:", revealedString);
+  console.log("Strings to redact:", validRedactStrings);
 
-  // Create the secretResps array with the revealed information as a JSON string
-  const secretResps = [revealedString];
-  console.log("secretResps: ", secretResps);
+  // Create the secretResps array with the original body string and the strings to redact
+  const secretResps = [bodyString, ...validRedactStrings];
 
   console.log("parseAxisResp: Finished processing");
 
