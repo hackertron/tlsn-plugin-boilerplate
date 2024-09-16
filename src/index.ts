@@ -31,7 +31,7 @@ function isValidHost(urlString: string) {
   */
 export function start() {
   if (!isValidHost(Config.get('tabUrl'))) {
-    redirect('https://axisbank.com/');
+    redirect('https://omni.axisbank.co.in/axisretailbanking/');
     outputJSON(false);
     return;
   }
@@ -169,7 +169,7 @@ export function three() {
   } else {
     const id = notarize({
       ...params,
-      getSecretResponse: 'parseAxisResp',
+      //getSecretResponse: 'parseAxisResp',
     });
     console.log("three fx id : ", id);
     outputJSON(id);
